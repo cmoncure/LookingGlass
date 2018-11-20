@@ -23,13 +23,15 @@ using namespace Capture;
 #include "common/debug.h"
 #include "common/memcpySSE.h"
 
-DXGI::DXGI() :
+DXGI::DXGI(uint8_t adapter, uint8_t output) :
   m_options(NULL),
   m_initialized(false),
   m_dxgiFactory(),
   m_device(),
   m_deviceContext(),
-  m_dup()
+  m_dup(),
+	m_adapterNum(adapter),
+	m_outputNum(output)
 {
 }
 
@@ -45,6 +47,10 @@ bool DXGI::CanInitialize()
 
   CloseDesktop(desktop);
   return true;
+}
+
+void DXGI::Enumerate()
+{
 }
 
 bool DXGI::Initialize(CaptureOptions * options)
@@ -72,19 +78,17 @@ bool DXGI::Initialize(CaptureOptions * options)
     return false;
   }
 
-  bool done = false;
   IDXGIAdapter1Ptr adapter;
-  for (int i = 0; m_dxgiFactory->EnumAdapters1(i, &adapter) != DXGI_ERROR_NOT_FOUND; i++)
+  if (m_dxgiFactory->EnumAdapters1(m_adapterNum, &adapter) != DXGI_ERROR_NOT_FOUND)
   {
     IDXGIOutputPtr output;
-    for (int i = 0; adapter->EnumOutputs(i, &output) != DXGI_ERROR_NOT_FOUND; i++)
+    if (adapter->EnumOutputs(m_outputNum, &output) != DXGI_ERROR_NOT_FOUND)
     {
       DXGI_OUTPUT_DESC outputDesc;
       output->GetDesc(&outputDesc);
       if (!outputDesc.AttachedToDesktop)
       {
         output = NULL;
-        continue;
       }
 
       m_output = output;
@@ -108,21 +112,8 @@ bool DXGI::Initialize(CaptureOptions * options)
       m_height = outputDesc.DesktopCoordinates.bottom - outputDesc.DesktopCoordinates.top;
       DEBUG_INFO("Capture Size     : %u x %u", m_width, m_height);
 
-      done = true;
-      break;
     }
 
-    if (done)
-      break;
-
-    adapter = NULL;
-  }
-
-  if (!done)
-  {
-    DEBUG_ERROR("Failed to locate a valid output device");
-    DeInitialize();
-    return false;
   }
 
   static const D3D_FEATURE_LEVEL featureLevels[] = {

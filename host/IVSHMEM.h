@@ -22,16 +22,19 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #define W32_LEAN_AND_MEAN
 #include <windows.h>
 #include <stdbool.h>
+#include <vector>
+
 
 class IVSHMEM
 {
 public:
-  static IVSHMEM * Get()
+  static IVSHMEM * Get(uint8_t device)
   {
     if (!m_instance)
-      m_instance = new IVSHMEM();
+      m_instance = new IVSHMEM(device);
     return m_instance;
   }
+  static void Enumerate();
 
   bool Initialize();
   void DeInitialize();
@@ -48,14 +51,16 @@ protected:
 
 
 private:
+  static std::vector<IVSHMEM *> m_shms;
   static IVSHMEM * m_instance;
 
-  IVSHMEM();
+  IVSHMEM(uint8_t device);
   ~IVSHMEM();
 
   bool   m_initialized;
   HANDLE m_handle;
 
+  UINT8  m_enumeration;
   UINT64 m_size   ; bool m_gotSize  ;
   UINT16 m_peerID ; bool m_gotPeerID;
   void * m_memory ; bool m_gotMemory;

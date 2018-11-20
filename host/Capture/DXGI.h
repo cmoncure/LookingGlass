@@ -38,7 +38,7 @@ namespace Capture
   class DXGI : public ICapture
   {
   public:
-    DXGI();
+    DXGI(uint8_t adapter, uint8_t output);
     virtual ~DXGI();
 
     const char * GetName() { return "DXGI"; }
@@ -57,6 +57,7 @@ namespace Capture
       Sleep(400);
       return Initialize(m_options);
     }
+	static void Enumerate();
 
     enum FrameType GetFrameType();
     size_t GetMaxFrameSize();
@@ -89,6 +90,7 @@ namespace Capture
     unsigned int   m_height;
     enum FrameType m_frameType;
 
+	uint8_t							m_adapterNum, m_outputNum;
     IDXGIFactory1Ptr                m_dxgiFactory;
     ID3D11DevicePtr                 m_device;
     D3D_FEATURE_LEVEL               m_featureLevel;

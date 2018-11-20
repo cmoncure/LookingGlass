@@ -38,10 +38,10 @@ enum ProcessStatus
 class Service
 {
 public:
-  static Service * Get()
+  static Service * Get(uint8_t device)
   {
     if (!m_instance)
-      m_instance = new Service();
+      m_instance = new Service(device);
     return m_instance;
   }
 
@@ -56,7 +56,7 @@ private:
   int m_tryTarget;
   int m_lastTryCount;
 
-  Service();
+  Service(uint8_t device);
   ~Service();
 
   bool ReInit(volatile char * flags);
@@ -68,6 +68,7 @@ private:
   IVSHMEM  * m_ivshmem;
   HANDLE     m_timer;
   ICapture * m_capture;
+  uint8_t	 m_device;
 
   KVMFRHeader * m_shmHeader;
 

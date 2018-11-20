@@ -29,7 +29,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 
 Service * Service::m_instance = NULL;
 
-Service::Service() :
+Service::Service(uint8_t device) :
   m_initialized(false),
   m_memory(NULL),
   m_timer(NULL),
@@ -37,10 +37,11 @@ Service::Service() :
   m_shmHeader(NULL),
   m_frameIndex(0),
   m_cursorDataSize(0),
-  m_cursorData(NULL)
+  m_cursorData(NULL),
+  m_device(device)
 {
   m_consoleSessionID = WTSGetActiveConsoleSessionId();
-  m_ivshmem = IVSHMEM::Get();
+  m_ivshmem = IVSHMEM::Get(device);
 }
 
 Service::~Service()

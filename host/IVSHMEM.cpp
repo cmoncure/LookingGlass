@@ -26,19 +26,36 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 
 IVSHMEM * IVSHMEM::m_instance = NULL;
 
-IVSHMEM::IVSHMEM() :
+IVSHMEM::IVSHMEM(uint8_t device) :
   m_initialized(false),
   m_handle(INVALID_HANDLE_VALUE),
   m_gotSize(false),
   m_gotPeerID(false),
   m_gotMemory(false)
 {
-
+	m_enumeration = device;
 }
 
 IVSHMEM::~IVSHMEM()
 {
   DeInitialize();
+}
+
+void IVSHMEM::Enumerate() {
+	uint8_t device = 0;
+	while (true) {
+		IVSHMEM mem(device);
+		if (!mem.Initialize()) {
+			break;
+		}
+		mem.GetSize();
+		
+
+		DEBUG_INFO("Found IVSHMEM %d, %p, size %d", device, mem.m_handle, mem.m_size);
+
+		mem.DeInitialize();
+		device++;
+	}
 }
 
 bool IVSHMEM::Initialize()
@@ -56,7 +73,7 @@ bool IVSHMEM::Initialize()
 
   while (true)
   {
-    if (SetupDiEnumDeviceInterfaces(deviceInfoSet, NULL, &GUID_DEVINTERFACE_IVSHMEM, 0, &deviceInterfaceData) == FALSE)
+    if (SetupDiEnumDeviceInterfaces(deviceInfoSet, NULL, &GUID_DEVINTERFACE_IVSHMEM, m_enumeration, &deviceInterfaceData) == FALSE)
     {
       DWORD error = GetLastError();
       if (error == ERROR_NO_MORE_ITEMS)

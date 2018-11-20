@@ -28,6 +28,7 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 #include "TraceUtil.h"
 #include "CaptureFactory.h"
 #include "Service.h"
+#include "IVSHMEM.h"
 
 #include <io.h>
 #include <fcntl.h> 
@@ -47,6 +48,9 @@ extern "C" NTSYSAPI NTSTATUS NTAPI NtSetTimerResolution(ULONG DesiredResolution,
 struct StartupArgs
 {
   bool foreground;
+  uint8_t memDevice;
+  uint8_t displayAdapter;
+  uint8_t displayOutput;
   const char * captureDevice;
   CaptureOptions captureOptions;
 };
@@ -60,6 +64,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdParam
   struct StartupArgs args;
   args.foreground = false;
   args.captureDevice = NULL;
+  args.memDevice = 0;
+  args.displayAdapter = 0;
+  args.displayOutput = 0;
 
   int ret = parseArgs(args);
   if (ret == 0)
@@ -105,10 +112,10 @@ int run(struct StartupArgs & args)
 
   ICapture * captureDevice;
   if (args.captureDevice == NULL)
-    captureDevice = CaptureFactory::DetectDevice(&args.captureOptions);
+    captureDevice = CaptureFactory::DetectDevice(&args.captureOptions, args.displayAdapter, args.displayOutput);
   else
   {
-    captureDevice = CaptureFactory::GetDevice(args.captureDevice, &args.captureOptions);
+    captureDevice = CaptureFactory::GetDevice(args.captureDevice, &args.captureOptions, args.displayAdapter, args.displayOutput);
     if (!captureDevice)
     {
       setupConsole();
@@ -124,7 +131,7 @@ int run(struct StartupArgs & args)
     return -1;
   }
 
-  Service *svc = svc->Get();
+  Service *svc = svc->Get(args.memDevice);
   if (!svc->Initialize(captureDevice))
     return -1;
 
@@ -163,7 +170,7 @@ int run(struct StartupArgs & args)
 int parseArgs(struct StartupArgs & args)
 {
   int c;
-  while((c = getopt(__argc, __argv, "hc:o:fl")) != -1)
+  while((c = getopt(__argc, __argv, "hec:A:O:M:o:fl")) != -1)
   {
     switch (c)
     {
@@ -174,7 +181,7 @@ int parseArgs(struct StartupArgs & args)
 
     case 'c':
     {
-      const CaptureFactory::DeviceList deviceList = CaptureFactory::GetDevices();
+      const CaptureFactory::DeviceList deviceList = CaptureFactory::GetDevices(args.displayAdapter, args.displayOutput);
 
       bool found = false;
       if (strcmp(optarg, "?") != 0)
@@ -207,6 +214,13 @@ int parseArgs(struct StartupArgs & args)
       break;
     }
 
+	case 'e':
+	{
+		setupConsole();
+		IVSHMEM::Enumerate();
+		break;
+	}
+
     case 'o':
     {
       args.captureOptions.push_back(optarg);
@@ -220,6 +234,19 @@ int parseArgs(struct StartupArgs & args)
     case 'l':
       doLicense();
       return -1;
+	  
+	case 'A':
+		args.displayAdapter = atoi(optarg);
+		break;
+
+	case 'O':
+		args.displayOutput = atoi(optarg);
+		break;
+
+	case 'M':
+		args.memDevice = atoi(optarg);
+		break;
+
     }
   }
 

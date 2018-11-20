@@ -35,7 +35,7 @@ class CaptureFactory
 public:
   typedef std::vector<ICapture *> DeviceList;
 
-  static DeviceList & GetDevices()
+  static DeviceList & GetDevices(uint8_t adapter, uint8_t output)
   {
     static DeviceList devices;
     if (!devices.empty())
@@ -44,14 +44,14 @@ public:
 #if CONFIG_CAPTURE_NVFBC
     devices.push_back(new Capture::NvFBC());
 #endif
-    devices.push_back(new Capture::DXGI ());
+    devices.push_back(new Capture::DXGI (adapter, output));
 
     return devices;
   }
 
-  static ICapture * GetDevice(const char * name, CaptureOptions * options)
+  static ICapture * GetDevice(const char * name, CaptureOptions * options, uint8_t adapter, uint8_t output)
   {
-    DeviceList devices = GetDevices();
+    DeviceList devices = GetDevices(adapter, output);
     for (DeviceList::const_iterator it = devices.begin(); it != devices.end(); ++it)
     {
       ICapture * device = *it;
@@ -73,9 +73,9 @@ public:
     return NULL;
   }
 
-  static ICapture * DetectDevice(CaptureOptions * options)
+  static ICapture * DetectDevice(CaptureOptions * options, uint8_t adapter, uint8_t output)
   {
-    DeviceList devices = GetDevices();
+    DeviceList devices = GetDevices(adapter, output);
     for (DeviceList::const_iterator it = devices.cbegin(); it != devices.cend(); ++it)
     {
       ICapture * device = *it;
